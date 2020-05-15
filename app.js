@@ -1,10 +1,19 @@
 const formEle = document.querySelector(`form`);
 const inputEle = document.querySelector(`form input`);
 const ulEle = document.querySelector(`.points-of-interest`);
-const mapDiv = document.querySelector('#map');
 const links = document.querySelector(`.points-of-interest`);
 let localLng = 0;
 let localLat = 0;
+let map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v9',
+  center: [-97, 49],
+  zoom: 12
+});
+
+let marker = new mapboxgl.Marker()
+  .setLngLat([-97, 49])
+  .addTo(map);
 
 formEle.addEventListener(`submit`, function(event){
   if(inputEle.value !== ``) {
@@ -27,17 +36,6 @@ navigator.geolocation.getCurrentPosition(success);
 
 mapboxgl.accessToken = `pk.eyJ1Ijoic3VsYXlsaXUiLCJhIjoiY2thNWlrYmNnMDBpaDNsbm9lOHQ2MG5ncSJ9.iLbn-Tba_v8DH2S_ffwwDA`;
 
-let map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v9',
-  center: [-97, 49],
-  zoom: 12
-});
-
-let marker = new mapboxgl.Marker()
-  .setLngLat([-97, 49])
-  .addTo(map);
-
 function success(pos) {
   const crd = pos.coords;
   localLng = crd.longitude;
@@ -47,7 +45,7 @@ function success(pos) {
 }
 
 function searchStreets(name) {
-  fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${name}.json?proximity=${localLng},${localLat}&access_token=${mapboxgl.accessToken}&limit=10`)
+  fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${name}.json?proximity=${localLng},${localLat}&types=poi&access_token=${mapboxgl.accessToken}&limit=10`)
     .then((resp) => {
       if (resp.ok) {
         return resp.json();
@@ -99,39 +97,72 @@ function GetDistance(lng1, lat1,  lng2, lat2) {
   return s.toFixed(1);
 }
 
-//if (mapDiv.style.visibility === true) map.resize();
 
+const images = {
+  'popup': 'https://docs.mapbox.com/mapbox-gl-js/assets/popup.png'
+};
 
-// map.on('load', function() {
-//   map.loadImage(
-//       'https://upload.wikimedia.org/wikipedia/commons/7/7c/201408_cat.png',
-//       function(error, image) {
-//           if (error) throw error;
-//           map.addImage('cat', image);
-//           map.addSource('point', {
-//               'type': 'geojson',
-//               'data': {
-//                   'type': 'FeatureCollection',
-//                   'features': [
-//                       {
-//                           'type': 'Feature',
-//                           'geometry': {
-//                               'type': 'Point',
-//                               'coordinates': array
-//                           }
-//                       }
-//                   ]
-//               }
-//           });
-//           map.addLayer({
-//               'id': 'points',
-//               'type': 'symbol',
-//               'source': 'point',
-//               'layout': {
-//                   'icon-image': 'cat',
-//                   'icon-size': 0.25
-//               }
-//           });
-//       }
-//   );
-// });
+loadImages(images, function(loadedImages) {
+  map.on('load', function() {
+      map.addImage('popup', loadedImages['popup'], {
+          stretchX: [
+              [25, 55],
+              [85, 115]
+          ],
+          stretchY: [[25, 100]],
+          content: [25, 25, 115, 100],
+          pixelRatio: 2
+      });
+
+      map.addSource('points', {
+          'type': 'geojson',
+          'data': {
+              'type': 'FeatureCollection',
+              'features': [
+                  {
+                      'type': 'Feature',
+                      'geometry': {
+                          'type': 'Point',
+                          'coordinates': [-40, 30]
+                      },
+                      'properties': {
+                          'image-name': 'popup',
+                          'name': 'One longer line dfsfsa'
+                      }
+                  }
+              ]
+          }
+      });
+      map.addLayer({
+          'id': 'points',
+          'type': 'symbol',
+          'source': 'points',
+          'layout': {
+              'text-field': ['get', 'name'],
+              'icon-text-fit': 'both',
+              'icon-image': ['get', 'image-name'],
+              'icon-allow-overlap': true,
+              'text-allow-overlap': true
+          }
+      });
+
+  });
+});
+
+function loadImages(urls, callback) {
+  var results = {};
+  for (var name in urls) {
+      map.loadImage(urls[name], makeCallback(name));
+  }
+
+  function makeCallback(name) {
+      return function(err, image) {
+          results[name] = err ? null : image;
+
+          // if all images are loaded, call the callback
+          if (Object.keys(results).length === Object.keys(urls).length) {
+              callback(results);
+          }
+      };
+  }
+}
