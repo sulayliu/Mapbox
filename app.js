@@ -4,16 +4,14 @@ const ulEle = document.querySelector(`.points-of-interest`);
 const links = document.querySelector(`.points-of-interest`);
 let localLng = 0;
 let localLat = 0;
-let map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v9',
-  center: [-97, 49],
-  zoom: 12
-});
 
-let marker = new mapboxgl.Marker()
-  .setLngLat([-97, 49])
-  .addTo(map);
+
+
+// let marker = new mapboxgl.Marker()
+//   .setLngLat([-97, 49])
+//   .addTo(map);
+
+
 
 formEle.addEventListener(`submit`, function(event){
   if(inputEle.value !== ``) {
@@ -24,12 +22,11 @@ formEle.addEventListener(`submit`, function(event){
 });
 
 links.addEventListener(`click`, function(event) {
-  if (event.target.closest(`li`).className = `poi`) {
-    const lng = event.target.closest(`aside > ul > li`).dataset.long;
-    const lat = event.target.closest(`aside > ul > li`).dataset.lat;
-    map.flyTo({center: [lng, lat], essential: true});
-    marker.setLngLat([lng, lat]);
-  }
+
+  const lng = event.target.closest(`aside > ul > li`).dataset.long;
+  const lat = event.target.closest(`aside > ul > li`).dataset.lat;
+  map.flyTo({center: [lng, lat], essential: true});
+
 })
 
 navigator.geolocation.getCurrentPosition(success);
@@ -40,8 +37,18 @@ function success(pos) {
   const crd = pos.coords;
   localLng = crd.longitude;
   localLat = crd.latitude;
-  map.setCenter([localLng, localLat]);
-  marker.setLngLat([localLng, localLat]);
+  let map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v9',
+    center: [localLng, localLat],
+    zoom: 12
+  });
+
+  let marker = new mapboxgl.Marker()
+  .setLngLat([localLng, localLat])
+  .setPopup(new mapboxgl.Popup({closeButton: false}).setHTML("You are here."))
+  .addTo(map)
+  .togglePopup();
 }
 
 function searchStreets(name) {
@@ -66,8 +73,7 @@ function getStreetList(features) {
     feature.distance = GetDistance(feature.center[0], feature.center[1], localLng, localLat);
   });
 
-  features.sort((a, b) => a.distance - b.distance)
-
+  features.sort((a, b) => a.distance - b.distance);
   
   features.forEach(feature => {
     const name = feature.place_name.split(`,`);
@@ -95,74 +101,4 @@ function GetDistance(lng1, lat1,  lng2, lat2) {
   s = s * 6378.137 ;// EARTH_RADIUS;
   s = Math.round(s * 10000) / 10000;
   return s.toFixed(1);
-}
-
-
-const images = {
-  'popup': 'https://docs.mapbox.com/mapbox-gl-js/assets/popup.png'
-};
-
-loadImages(images, function(loadedImages) {
-  map.on('load', function() {
-      map.addImage('popup', loadedImages['popup'], {
-          stretchX: [
-              [25, 55],
-              [85, 115]
-          ],
-          stretchY: [[25, 100]],
-          content: [25, 25, 115, 100],
-          pixelRatio: 2
-      });
-
-      map.addSource('points', {
-          'type': 'geojson',
-          'data': {
-              'type': 'FeatureCollection',
-              'features': [
-                  {
-                      'type': 'Feature',
-                      'geometry': {
-                          'type': 'Point',
-                          'coordinates': [-40, 30]
-                      },
-                      'properties': {
-                          'image-name': 'popup',
-                          'name': 'One longer line dfsfsa'
-                      }
-                  }
-              ]
-          }
-      });
-      map.addLayer({
-          'id': 'points',
-          'type': 'symbol',
-          'source': 'points',
-          'layout': {
-              'text-field': ['get', 'name'],
-              'icon-text-fit': 'both',
-              'icon-image': ['get', 'image-name'],
-              'icon-allow-overlap': true,
-              'text-allow-overlap': true
-          }
-      });
-
-  });
-});
-
-function loadImages(urls, callback) {
-  var results = {};
-  for (var name in urls) {
-      map.loadImage(urls[name], makeCallback(name));
-  }
-
-  function makeCallback(name) {
-      return function(err, image) {
-          results[name] = err ? null : image;
-
-          // if all images are loaded, call the callback
-          if (Object.keys(results).length === Object.keys(urls).length) {
-              callback(results);
-          }
-      };
-  }
 }
