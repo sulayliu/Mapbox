@@ -2,16 +2,24 @@ const formEle = document.querySelector(`form`);
 const inputEle = document.querySelector(`form input`);
 const ulEle = document.querySelector(`.points-of-interest`);
 const links = document.querySelector(`.points-of-interest`);
+const popUp = new mapboxgl.Popup({closeButton: false}).setText("You are here.")
 let localLng = 0;
 let localLat = 0;
 
+mapboxgl.accessToken = `pk.eyJ1Ijoic3VsYXlsaXUiLCJhIjoiY2thNWlrYmNnMDBpaDNsbm9lOHQ2MG5ncSJ9.iLbn-Tba_v8DH2S_ffwwDA`;
 
+let map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v9',
+  center: [localLng, localLat],
+  zoom: 12
+});
 
-// let marker = new mapboxgl.Marker()
-//   .setLngLat([-97, 49])
-//   .addTo(map);
-
-
+let marker = new mapboxgl.Marker()
+.setLngLat([localLng, localLat])
+.setPopup(new mapboxgl.Popup({closeButton: false}).setHTML("You are here."))
+.addTo(map)
+.togglePopup();
 
 formEle.addEventListener(`submit`, function(event){
   if(inputEle.value !== ``) {
@@ -22,32 +30,27 @@ formEle.addEventListener(`submit`, function(event){
 });
 
 links.addEventListener(`click`, function(event) {
-
   const lng = event.target.closest(`aside > ul > li`).dataset.long;
   const lat = event.target.closest(`aside > ul > li`).dataset.lat;
-  map.flyTo({center: [lng, lat], essential: true});
+  const name = event.target.closest(`aside > ul > li > ul`).firstElementChild.innerHTML
+  console.log(name)
+  map.flyTo({center: [lng, lat], speed: 2});
+  marker.setLngLat([lng, lat])
+  .setPopup(popUp.setText(`${name}`))
+  .togglePopup();
 
 })
 
 navigator.geolocation.getCurrentPosition(success);
 
-mapboxgl.accessToken = `pk.eyJ1Ijoic3VsYXlsaXUiLCJhIjoiY2thNWlrYmNnMDBpaDNsbm9lOHQ2MG5ncSJ9.iLbn-Tba_v8DH2S_ffwwDA`;
-
 function success(pos) {
   const crd = pos.coords;
   localLng = crd.longitude;
   localLat = crd.latitude;
-  let map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/streets-v9',
-    center: [localLng, localLat],
-    zoom: 12
-  });
+  map.jumpTo({center: [localLng, localLat], essential: true});
 
-  let marker = new mapboxgl.Marker()
-  .setLngLat([localLng, localLat])
-  .setPopup(new mapboxgl.Popup({closeButton: false}).setHTML("You are here."))
-  .addTo(map)
+  marker.setLngLat([localLng, localLat])
+  .setPopup(popUp)
   .togglePopup();
 }
 
