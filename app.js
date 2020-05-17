@@ -8,18 +8,8 @@ let localLat = 0;
 
 mapboxgl.accessToken = `pk.eyJ1Ijoic3VsYXlsaXUiLCJhIjoiY2thNWlrYmNnMDBpaDNsbm9lOHQ2MG5ncSJ9.iLbn-Tba_v8DH2S_ffwwDA`;
 
-let map = new mapboxgl.Map({
-  container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v9',
-  center: [localLng, localLat],
-  zoom: 12
-});
-
-let marker = new mapboxgl.Marker()
-.setLngLat([localLng, localLat])
-.setPopup(new mapboxgl.Popup({closeButton: false}).setHTML("You are here."))
-.addTo(map)
-.togglePopup();
+let map;
+let marker;
 
 formEle.addEventListener(`submit`, function(event){
   if(inputEle.value !== ``) {
@@ -47,11 +37,19 @@ function success(pos) {
   const crd = pos.coords;
   localLng = crd.longitude;
   localLat = crd.latitude;
-  map.jumpTo({center: [localLng, localLat], essential: true});
 
-  marker.setLngLat([localLng, localLat])
-  .setPopup(popUp)
-  .togglePopup();
+  map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/streets-v9',
+    center: [localLng, localLat],
+    zoom: 12
+  });
+  marker = new mapboxgl.Marker()
+    .setLngLat([localLng, localLat])
+    .setPopup(new mapboxgl.Popup({closeButton: false}).setHTML("You are here."))
+    .addTo(map)
+    .togglePopup();
+
 }
 
 function searchStreets(name) {
