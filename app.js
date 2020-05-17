@@ -49,7 +49,6 @@ function success(pos) {
     .setPopup(new mapboxgl.Popup({closeButton: false}).setHTML("You are here."))
     .addTo(map)
     .togglePopup();
-
 }
 
 function searchStreets(name) {
@@ -70,22 +69,19 @@ function searchStreets(name) {
 function getStreetList(features) {
   let streetHTML = ``;
 
-  features.forEach(feature => {
-    feature.distance = GetDistance(feature.center[0], feature.center[1], localLng, localLat);
-  });
-
-  features.sort((a, b) => a.distance - b.distance);
+  features.sort((a, b) => GetDistance(a.center[0], a.center[1], localLng, localLat) - GetDistance(b.center[0], b.center[1], localLng, localLat));
   
   features.forEach(feature => {
-    const name = feature.place_name.split(`,`);
-    streetHTML +=  `
+    if (feature.properties.address !== undefined) {
+      streetHTML +=  `
       <li class="poi" data-long="${feature.center[0]}" data-lat="${feature.center[1]}">
         <ul>
-          <li class="name">${name[0]}</li>
-          <li class="street-address">${name[2]} ${name[1]}</li>
-          <li class="distance">${feature.distance} KM</li>
+          <li class="name">${feature.text}</li>
+          <li class="street-address">${feature.properties.address}</li>
+          <li class="distance">${GetDistance(feature.center[0], feature.center[1], localLng, localLat)} KM</li>
         </ul>
       </li>`
+    }
   });
 
   ulEle.innerHTML = streetHTML;
